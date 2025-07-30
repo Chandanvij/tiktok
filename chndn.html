@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Shelby vs You</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f0f0f0;
+      padding-top: 40px;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-gap: 5px;
+      justify-content: center;
+      margin: auto;
+    }
+    .cell {
+      width: 100px;
+      height: 100px;
+      font-size: 48px;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #444;
+      cursor: pointer;
+    }
+    .message {
+      margin-top: 20px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Shelby vs You</h1>
+  <div class="board" id="board"></div>
+  <div class="message" id="message"></div>
+  <button onclick="resetGame()">Play Again</button>
+
+  <script>
+    const boardElem = document.getElementById("board");
+    const messageElem = document.getElementById("message");
+    let board = ["", "", "", "", "", "", "", "", ""];
+    let player = "X";
+    let computer = "O";
+    let gameOver = false;
+
+    const winCombos = [
+      [0,1,2], [3,4,5], [6,7,8],
+      [0,3,6], [1,4,7], [2,5,8],
+      [0,4,8], [2,4,6]
+    ];
+
+    function renderBoard() {
+      boardElem.innerHTML = "";
+      board.forEach((cell, i) => {
+        const div = document.createElement("div");
+        div.className = "cell";
+        div.textContent = cell;
+        div.onclick = () => playerMove(i);
+        boardElem.appendChild(div);
+      });
+    }
+
+    function playerMove(i) {
+      if (board[i] || gameOver) return;
+      board[i] = player;
+      renderBoard();
+      if (checkWin(board, player)) {
+        messageElem.textContent = "Whaa bhai 😎";
+        gameOver = true;
+        return;
+      }
+      if (board.every(c => c)) {
+        messageElem.textContent = "🤝 Draw!";
+        gameOver = true;
+        return;
+      }
+      setTimeout(computerMove, 300);
+    }
+
+    function computerMove() {
+      const best = minimax(board, computer);
+      board[best.index] = computer;
+      renderBoard();
+      if (checkWin(board, computer)) {
+        messageElem.textContent = "Koi baat nahi 😅";
+        gameOver = true;
+      } else if (board.every(c => c)) {
+        messageElem.textContent = "🤝 Draw!";
+        gameOver = true;
+      }
+    }
+
+    function checkWin(bd, player) {
+      return winCombos.some(combo => combo.every(i => bd[i] === player));
+    }
+
+    function minimax(newBoard, currentPlayer) {
+      const availSpots = newBoard.map((v, i) => v === "" ? i : null).filter(v => v !== null);
+
+      if (checkWin(newBoard, player)) return { score: -10 };
+      if (checkWin(newBoard, computer)) return { score: 10 };
+      if (availSpots.length === 0) return { score: 0 };
+
+      const moves = [];
+
+      for (let i = 0; i < availSpots.length; i++) {
+        const move = {};
+        move.index = availSpots[i];
+        newBoard[availSpots[i]] = currentPlayer;
+
+        const result = minimax(newBoard, currentPlayer === computer ? player : computer);
+        move.score = result.score;
+
+        newBoard[availSpots[i]] = "";
+        moves.push(move);
+      }
+
+      let bestMove;
+      if (currentPlayer === computer) {
+        let bestScore = -Infinity;
+        for (let i = 0; i < moves.length; i++) {
+          if (moves[i].score > bestScore) {
+            bestScore = moves[i].score;
+            bestMove = i;
+          }
+        }
+      } else {
+        let bestScore = Infinity;
+        for (let i = 0; i < moves.length; i++) {
+          if (moves[i].score < bestScore) {
+            bestScore = moves[i].score;
+            bestMove = i;
+          }
+        }
+      }
+
+      return moves[bestMove];
+    }
+
+    function resetGame() {
+      board = ["", "", "", "", "", "", "", "", ""];
+      gameOver = false;
+      messageElem.textContent = "";
+      renderBoard();
+    }
+
+    renderBoard();
+  </script>
+</body>
+</html>
